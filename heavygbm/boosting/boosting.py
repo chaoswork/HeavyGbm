@@ -96,7 +96,7 @@ class GBDT(Boosting):
         pass
 
     def train_one_tree(self):
-        pass
+        self.tree_learner_.train(self.gradients_, self.hessians_)
 
 
 

@@ -20,5 +20,8 @@ class FeatureHistogram(object):
         self.num_bin_ = feature.num_bin()
         # store HistogramBinEntry
         self.data_ = [None] * self.num_bin_
+        self.is_splittable_ = True
 
 
+    def set_is_splittable(self, value):
+        self.is_splittable_ = value

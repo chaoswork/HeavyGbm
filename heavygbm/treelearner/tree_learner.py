@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import random
+
 from .feature_histogram import FeatureHistogram
 from .leaf_splits import LeafSplits
+from .split_info import SplitInfo
 from .data_partition import DataPartition
 
 
@@ -38,6 +41,8 @@ class SerialTreeLearner(TreeLearner):
         self.ordered_hessians_ = None
         self.is_data_in_leaf_ = None
         self.train_data_ = None
+        self.ptr_to_ordered_gradients_ = None
+        self.ptr_to_ordered_hessians_ = None
 
         self.num_leaves_ = int(config['num_leaves'])
         self.min_num_data_one_leaf_ = int(config['min_data_in_leaf'])
@@ -72,7 +77,10 @@ class SerialTreeLearner(TreeLearner):
 
         #  push split information for all leaves
         # best_split_per_leaf_.push_back(SplitInfo());
-        self.best_split_per_leaf_ = [None] * self.num_leaves_
+        self.best_split_per_leaf_ = []  # [None] * self.num_leaves_
+        for i in range(self.num_leaves_):
+            split_info = SplitInfo()
+            self.best_split_per_leaf_.append(split_info)
 
         # initialize ordered_bins_ with nullptr
         # TODO:ordered_bin暂时先不考虑
@@ -83,11 +91,62 @@ class SerialTreeLearner(TreeLearner):
         # initialize data partition
         self.data_partition_ = DataPartition(self.num_data_, self.num_leaves_);
 
-        self.is_feature_used_ = [None] * self.num_features_
+        self.is_feature_used_ = None  # [None] * self.num_features_
 
         # initialize ordered gradients and hessians
         self.ordered_gradients_ = [None] * self.num_data_
         self.ordered_hessians_ = [None] * self.num_data_
+
+
+    def train(self, gradients, hessians):
+        """TODO: Docstring for train.
+
+        :gradients: TODO
+        :hessians: TODO
+        :returns: TODO
+
+        """
+        self.gradients_ = gradients
+        self.hessians_ = hessians
+        # some initial works before training
+        self.before_train()
+
+    def before_train(self):
+        """TODO: Docstring for before_train.
+        :returns: TODO
+
+        """
+        self.is_feature_used_ = [False] * self.num_features_
+        used_feature_cnt = int(self.num_features_ * self.feature_fraction_)
+        used_feature_indices = random.sample(list(range(self.num_features_)), used_feature_cnt)
+        for idx in used_feature_indices:
+            self.is_feature_used_[idx] = True
+        # set all histogram to splittable
+        for i in range(self.num_leaves_):
+            for j in range(self.train_data_.num_features()):
+                self.historical_histogram_array_[i][j].set_is_splittable(True)
+
+        # initialize data partition
+        self.data_partition_.init()
+
+        # reset the splits for leaves
+        for i in range(self.num_leaves_):
+            self.best_split_per_leaf_[i].reset()
+            print (self.best_split_per_leaf_[i].gain)
+
+        # Sumup for root
+        if self.data_partition_.leaf_count_[0] == self.num_data_:
+            # use all data
+            self.smaller_leaf_splits_.init_gh(self.gradients_, self.hessians_)
+            # point to gradients, avoid copy
+            self.ptr_to_ordered_gradients_ = self.gradients_
+            self.ptr_to_ordered_hessians = self.hessians_
+        else:
+            # use bagging, only use part of data
+            self.smaller_leaf_splits_.init_ldgh(0, self.data_partition_,
+                                           self.gradients_, self.hessians_)
+
+
 
 
 
