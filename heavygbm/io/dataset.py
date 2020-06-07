@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .bin import BinMapper
+from ..treelearner import Feature
 
 
 class Metadata(object):
@@ -29,6 +30,9 @@ class DataSet(object):
 
         self.meta_data = Metadata()
         self.sample_data = None
+        self.used_feature_map_ = None
+        self.features_ = None
+        self.is_enable_sparse_ = False
 
     def load_train_data(self):
         """TODO: Docstring for load_train_data.
@@ -53,11 +57,24 @@ class DataSet(object):
         :returns: TODO
         """
         labels = self.sample_data.iloc[:,0].tolist()
-        sample_value = np.transpose(self.sample_data.iloc[:,1:].to_numpy())
-        print (labels, sample_value)
-        for i in range(sample_value.shape[0]):
+        sample_values = np.transpose(self.sample_data.iloc[:,1:].to_numpy())
+
+        self.features_ = []
+        # -1 means doesn't use this feature
+        self.used_feature_map_ = [-1] * sample_values.shape[0]
+        print (labels, sample_values)
+        for i in range(sample_values.shape[0]):
             bin_mapper = BinMapper()
-            bin_mapper.find_bin(sample_value[i], self.max_bin)
+            bin_mapper.find_bin(sample_values[i], self.max_bin)
+            if bin_mapper.is_trival():
+                continue
+            # map real feature index to used feature index
+            self.used_feature_map_[i] = len(self.features_)
+            # push new feature
+            new_feature = Feature(i, bin_mapper, self.sample_data.shape[0], self.is_enable_sparse_)
+            self.features_.append(new_feature)
+
+
 
 
 

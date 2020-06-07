@@ -15,6 +15,19 @@ class BinMapper(object):
         self.is_trival_ = None
         self.sparse_rate_ = None
 
+    def is_trival(self):
+        """TODO: Docstring for is_trival.
+        :returns: TODO
+
+        """
+        return self.is_trival_
+
+    def num_bin(self):
+        return self.num_bin_
+
+    def sparse_rate(self):
+        return self.sparse_rate_
+
     def find_bin(self, values_list, max_bin):
         distinct_values, counts = np.unique(values_list, return_counts=True)
         print (distinct_values, counts)
@@ -63,14 +76,51 @@ class BinMapper(object):
         self.sparse_rate_ = float(cnt_in_bin0) / len(values_list)
 
 
+class Bin(object):
+
+    """Docstring for Bin. """
+
+    def __init__(self):
+        """TODO: to be defined1. """
+        pass
+
+    @staticmethod
+    def create_bin(num_data, num_bin, sparse_rate, is_enable_sparse):
+        """TODO: Docstring for create_bin.
+        """
+        kSparseThreshold = 0.8
+        if sparse_rate > kSparseThreshold and is_enable_sparse:
+            return Bin.create_sparse_bin(num_data, num_bin), True
+        else:
+            return Bin.create_dense_bin(num_data, num_bin), False
+
+    @staticmethod
+    def create_dense_bin(num_data, num_bin):
+        """
+        根据num_bin的大小，申请不同的bit位数，节省内存用，这里不使用该功能。
+        """
+        return DenseBin(num_data)
+
+    @staticmethod
+    def create_sparse_bin(num_data, num_bin):
+        """
+        根据num_bin的大小，申请不同的bit位数，节省内存用，这里不使用该功能。
+        """
+        # TODO: 暂时用DenseBin代替
+        return DenseBin(num_data)
 
 
 
+class DenseBin(Bin):
 
+    """Docstring for DenseBin.
+    核心数据是data_, 每一个特征都有个bin数据。
+    data_[i] = j表明第i行的样本的bin_index是j
+    """
 
+    def __init__(self, num_data):
+        """TODO: to be defined1. """
+        Bin.__init__(self)
+        self.num_data = num_data
+        self.data_ = [0] * num_data
 
-
-
-
-
-        
