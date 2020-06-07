@@ -11,7 +11,7 @@ class Feature(object):
         """TODO: to be defined1. """
         self.feature_idx = feature_idx
         self.bin_mapper = bin_mapper
-        self.bin_data, self.is_sparse = Bin.create_bin(
+        self.bin_data_, self.is_sparse = Bin.create_bin(
             num_data,
             bin_mapper.num_bin(),
             bin_mapper.sparse_rate(),
@@ -20,4 +20,12 @@ class Feature(object):
 
         self.num_data = num_data
         self.is_enable_sparse = is_enable_sparse
-        
+
+    def num_bin(self):
+        return self.bin_mapper.num_bin()
+
+    def bin_data(self):
+        return self.bin_data_
+
+    def push_data(self, line_idx, value):
+        self.bin_data_.push(line_idx, self.bin_mapper.value_to_bin(value))

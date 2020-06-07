@@ -6,6 +6,10 @@ import argparse
 
 
 from heavygbm.io import DataSet
+from heavygbm.metric import Metric
+from heavygbm.boosting import Boosting
+from heavygbm.objective import ObjectiveFunction
+from heavygbm.treelearner import TreeLearner
 
 class App(object):
 
@@ -18,6 +22,7 @@ class App(object):
         init heavygbm
         """
         self.train_data_ = None
+        self.train_metric_ = []
         self.config_ = self.load_parameters(argv)
 
     def load_parameters(self, argv):
@@ -46,20 +51,42 @@ class App(object):
         # load train
         self.train_data_ = DataSet(self.config_['data'],
                                    max_bin=self.config_['max_bin'])
+        # create training metric
+        if self.config_['is_training_metric'] == 'true':
+            for metric_type in self.config_['metric'].split(','):
+                metric_type = metric_type.strip()
+                metric = Metric.create_metric(metric_type, self.config_)
+            self.train_metric_.append(metric)
+        print (self.train_metric_)
+
+
         self.train_data_.load_train_data()
         # load valid
 
     def init_train(self):
-        # boosting = 
-        # objective_fun_ = 
+        # create boosting
+        self.boosting =  Boosting.create_boosting(
+            self.config_['boosting_type'], self.config_)
+        # create object function
+        self.objective_func_ = ObjectiveFunction.create_objective_function(
+            self.config_['objective'], self.config_
+        )
+
         self.load_data()
-        # objective_fun_.init
+        self.objective_func_.init(self.train_data_.meta_data(),
+                                 self.train_data_.num_data())
+
         # boosting.init
-        pass
+        self.boosting.init(
+            self.train_data_, self.objective_func_,
+            self.train_metric_, self.config_['output_model']
+        )
+        # add validation data into boosting
+        # TODO: 暂不实现
 
     def train(self):
         # boosting.train
-        pass
+        self.boosting.train()
 
 
 
@@ -69,3 +96,4 @@ if __name__ == "__main__":
     print(app.config_['task'])
     print(app.config_['num_leaves'])
     app.init_train()
+    app.train()

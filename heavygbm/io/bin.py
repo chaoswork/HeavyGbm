@@ -4,6 +4,16 @@
 import numpy as np
 
 
+class HistogramBinEntry(object):
+    def __init__(self):
+        # /*! \brief Sum of gradients on this bin */
+        self.sum_gradients = 0.0
+        # /*! \brief Sum of hessians on this bin */
+        self.sum_hessians = 0.0
+        # /*! \brief Number of data on this bin */
+        self.cnt = 0
+
+
 class BinMapper(object):
 
     """Docstring for BinMapper. """
@@ -75,6 +85,18 @@ class BinMapper(object):
         self.is_trival_ = self.num_bin_ <= 1
         self.sparse_rate_ = float(cnt_in_bin0) / len(values_list)
 
+    def value_to_bin(self, value):
+        # use binary search to find bin
+        l = 0
+        r = self.num_bin_ - 1
+        while l < r:
+            m = int((r + l - 1) / 2)
+            if value <= self.bin_upper_bound_[m]:
+                r = m
+            else:
+                l = m + 1
+        return l
+
 
 class Bin(object):
 
@@ -122,5 +144,8 @@ class DenseBin(Bin):
         """TODO: to be defined1. """
         Bin.__init__(self)
         self.num_data = num_data
-        self.data_ = [0] * num_data
+        self.data_ = [None] * num_data
+
+    def push(self, idx, value):
+        self.data_[idx] = value
 

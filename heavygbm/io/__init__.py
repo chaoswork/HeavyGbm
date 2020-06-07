@@ -1,2 +1,2 @@
-from .dataset import *
 from .bin import *
+from .dataset import *
