@@ -7,7 +7,7 @@ class SplitInfo(object):
 
     def __init__(self):
         """TODO: to be defined1. """
-        self.feature_idx = -1
+        self.feature_idx = None  # -1
         self.gain = -float('inf')
         self.threshold = None
         self.left_output = None  # Left output after split
@@ -21,6 +21,6 @@ class SplitInfo(object):
 
     def reset(self):
         """TODO: to be defined1. """
-        self.feature_idx = -1
+        self.feature_idx = None  # -1
         self.gain = -float('inf')
 

@@ -29,3 +29,6 @@ class Feature(object):
 
     def push_data(self, line_idx, value):
         self.bin_data_.push(line_idx, self.bin_mapper.value_to_bin(value))
+
+    def bin_to_value(self, bin_):
+        return self.bin_mapper.bin_to_value(bin_)

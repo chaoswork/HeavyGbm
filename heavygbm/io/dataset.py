@@ -95,8 +95,8 @@ class DataSet(object):
         sample_values = np.transpose(self.sample_data.iloc[:,1:].to_numpy())
 
         self.features_ = []
-        # -1 means doesn't use this feature
-        self.used_feature_map_ = [-1] * sample_values.shape[0]
+        # None means doesn't use this feature
+        self.used_feature_map_ = [None] * sample_values.shape[0]
         print (labels, sample_values)
         for i in range(sample_values.shape[0]):
             bin_mapper = BinMapper()
@@ -117,7 +117,8 @@ class DataSet(object):
             self.meta_data_.set_label_at(i, label)
             for (real_feat_idx, value) in enumerate(feature):
                 feature_idx = self.used_feature_map_[real_feat_idx]
-                if feature_idx >= 0:
+                # if feature_idx >= 0:
+                if feature_idx is not None:
                     # if is used feature
                     self.features_[feature_idx].push_data(i, value)
 

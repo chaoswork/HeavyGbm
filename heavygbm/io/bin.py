@@ -97,6 +97,8 @@ class BinMapper(object):
                 l = m + 1
         return l
 
+    def bin_to_value(self, bin_):
+        return self.bin_upper_bound_[bin_]
 
 class Bin(object):
 
@@ -148,4 +150,35 @@ class DenseBin(Bin):
 
     def push(self, idx, value):
         self.data_[idx] = value
+
+    def construct_histogram(self, data_indices, num_data, num_bin,
+                            ordered_gradients, ordered_hessians):
+        hist_bin_entrys = []
+        for i in range(num_bin):
+            entry = HistogramBinEntry()
+            hist_bin_entrys.append(entry)
+
+        for i in range(num_data):
+            if data_indices is not None:
+                # use part of data
+                bin_value = self.data_[data_indices[i]]
+            else:
+                bin_value = self.data_[i]
+            hist_bin_entrys[bin_value].sum_gradients += ordered_gradients[i]
+            hist_bin_entrys[bin_value].sum_hessians += ordered_hessians[i]
+            hist_bin_entrys[bin_value].cnt += 1
+        for i in range(num_bin):
+            print (i, hist_bin_entrys[i].sum_gradients,
+                   hist_bin_entrys[i].sum_hessians, hist_bin_entrys[i].cnt)
+        return hist_bin_entrys
+
+    def split(self, threshold, data_indices):
+        left_indices = [idx for idx in data_indices if self.data_[idx] <= threshold]
+        right_indices = [idx for idx in data_indices if self.data_[idx] > threshold]
+
+        return left_indices, right_indices
+
+
+
+
 

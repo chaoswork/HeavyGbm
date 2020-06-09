@@ -39,6 +39,26 @@ class DataPartition(object):
             self.leaf_count_[0] = self.used_data_count_
             self.indices_ = copy.deepcopy(self.used_data_indices_)
 
+    def get_index_on_leaf(self, leaf):
+        begin = self.leaf_begin_[leaf]
+        end = begin + self.leaf_count_[leaf]
+        indices = self.indices_[begin: end]
+        return self.leaf_count_[leaf], indices
+
+    def split(self, leaf, feature_bins, threshold, right_leaf):
+        begin = self.leaf_begin_[leaf]
+        cnt = self.leaf_count_[leaf]
+
+        left_split, right_split = feature_bins.split(
+            threshold, self.indices_[begin: begin + cnt])
+        print ('debug', left_split, right_split, self.indices_)
+        self.indices_[begin: begin + len(left_split)] = left_split
+        self.indices_[begin + len(left_split): begin + cnt] = right_split
+        print ('debug', left_split, right_split, self.indices_)
+
+        # update leaf boundary
+        self.leaf_count_[leaf] = len(left_split)
+        self.leaf_begin_[right_leaf] = begin + len(left_split)
+        self.leaf_count_[right_leaf] = cnt - len(left_split)
 
 
-        
