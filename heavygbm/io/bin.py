@@ -13,6 +13,11 @@ class HistogramBinEntry(object):
         # /*! \brief Number of data on this bin */
         self.cnt = 0
 
+    def to_string(self):
+        return 'sum_gradients={}, sum_hessians={}, cnt={}'.format(
+            self.sum_gradients, self.sum_hessians, self.cnt
+        )
+
 
 class BinMapper(object):
 
@@ -40,14 +45,14 @@ class BinMapper(object):
 
     def find_bin(self, values_list, max_bin):
         distinct_values, counts = np.unique(values_list, return_counts=True)
-        print (distinct_values, counts)
+        # print (distinct_values, counts)
         cnt_in_bin0 = counts[0]
         if len(distinct_values) < max_bin:
             # use distinct value is enough
             self.num_bin_ = len(distinct_values)
             self.bin_upper_bound_ = [(0.0 + x + y) / 2 for x, y in zip(distinct_values[:-1], distinct_values[1:])]
             self.bin_upper_bound_.append(float('inf'))
-            print (self.bin_upper_bound_)
+            # print (self.bin_upper_bound_)
         else:
             self.num_bin_ = max_bin
             self.bin_upper_bound_ = [None] * max_bin
@@ -80,7 +85,7 @@ class BinMapper(object):
             if bin_cnt < max_bin:
                 self.bin_upper_bound_ = self.bin_upper_bound_[:bin_cnt]
                 self.num_bin_ = bin_cnt
-            print (self.bin_upper_bound_)
+            # print (self.bin_upper_bound_)
 
         self.is_trival_ = self.num_bin_ <= 1
         self.sparse_rate_ = float(cnt_in_bin0) / len(values_list)
@@ -167,9 +172,9 @@ class DenseBin(Bin):
             hist_bin_entrys[bin_value].sum_gradients += ordered_gradients[i]
             hist_bin_entrys[bin_value].sum_hessians += ordered_hessians[i]
             hist_bin_entrys[bin_value].cnt += 1
-        for i in range(num_bin):
-            print (i, hist_bin_entrys[i].sum_gradients,
-                   hist_bin_entrys[i].sum_hessians, hist_bin_entrys[i].cnt)
+        # for i in range(num_bin):
+        #     print (i, hist_bin_entrys[i].sum_gradients,
+        #            hist_bin_entrys[i].sum_hessians, hist_bin_entrys[i].cnt)
         return hist_bin_entrys
 
     def split(self, threshold, data_indices):

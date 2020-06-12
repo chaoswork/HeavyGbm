@@ -59,9 +59,9 @@ class LeafSplits(object):
         """
         self.leaf_index_ = leaf
         self.num_data_in_leaf_ , self.data_indices_ = data_partition.get_index_on_leaf(leaf)
-        print ('debug', self.data_indices_)
-        print ('debug', gradients)
-        print ('debug', hessians)
+        # print ('debug', self.data_indices_)
+        # print ('debug', gradients)
+        # print ('debug', hessians)
         self.sum_gradients_ = sum([gradients[idx] for idx in self.data_indices_])
         self.sum_hessians_ = sum([hessians[idx] for idx in self.data_indices_])
         for split_info in self.best_split_per_feature_:
@@ -76,10 +76,22 @@ class LeafSplits(object):
         """
         self.leaf_index_ = leaf
         self.num_data_in_leaf_ , self.data_indices_ = data_partition.get_index_on_leaf(leaf)
-        print ('debug', self.data_indices_)
-        print ('debug', sum_gradients)
-        print ('debug', sum_hessians)
+        # print ('debug', self.data_indices_)
+        # print ('debug', sum_gradients)
+        # print ('debug', sum_hessians)
         self.sum_gradients_ = sum_gradients
         self.sum_hessians_ = sum_hessians
         for split_info in self.best_split_per_feature_:
             split_info.reset()
+
+    def to_string(self):
+        return '(num_feature_={}, num_data_in_leaf_={}, num_data_={}, leaf_index_={}, data_indices_={}, best_split_per_feature_={}, sum_gradients={}, sum_hessians={})'.format(
+            self.num_feature_,
+            self.num_data_in_leaf_,
+            self.num_data_,
+            self.leaf_index_,
+            self.data_indices_,
+            [x.to_string() for x in self.best_split_per_feature_],
+            self.sum_gradients_,
+            self.sum_hessians_)
+

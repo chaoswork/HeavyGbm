@@ -3,6 +3,7 @@
 
 import random
 import numpy as np
+import copy
 
 from .feature_histogram import FeatureHistogram
 from .leaf_splits import LeafSplits
@@ -70,14 +71,14 @@ class SerialTreeLearner(TreeLearner):
                 new_histogram.init(
                     self.train_data_.feature_at(j), j,
                     self.min_num_data_one_leaf_,
-                    self.min_sum_hessian_one_leaf_)
+                    self.min_sum_hessian_one_leaf_, i)
                 self.historical_histogram_array_[i].append(new_histogram)
                 self.hha_index[i] = i
 
-        for i in range(self.num_leaves_):
-            for j in range(self.train_data_.num_features()):
-                print (i, j, self.historical_histogram_array_[i][j].feature_idx_)
-            print ('-' * 10)
+        # for i in range(self.num_leaves_):
+        #     for j in range(self.train_data_.num_features()):
+        #         print (i, j, self.historical_histogram_array_[i][j].feature_idx_)
+        #     print ('-' * 10)
 
         #  push split information for all leaves
         # best_split_per_leaf_.push_back(SplitInfo());
@@ -103,6 +104,10 @@ class SerialTreeLearner(TreeLearner):
         self.ordered_gradients_ = [None] * self.num_data_
         self.ordered_hessians_ = [None] * self.num_data_
 
+    def debug_best_split_per_leaf(self, msg):
+        for i in range(len(self.best_split_per_leaf_)):
+            print ('[{}]best_split_per_leaf_, i={}, gain={})'.format(
+                msg, i, self.best_split_per_leaf_[i].gain))
 
     def train(self, gradients, hessians):
         """TODO: Docstring for train.
@@ -123,11 +128,21 @@ class SerialTreeLearner(TreeLearner):
         right_leaf = None
 
         for iter_split in range(self.num_leaves_ - 1):
-            print ('iter_split=%d' % iter_split)
+            print ('iter_split=%d, left_leaf=%d, right_leaf=%d,\nsmaller_leaf_splits_=%s,\nlarger_leaf_splits_=%s' % (
+                iter_split, left_leaf, right_leaf if right_leaf is not None else -1,
+                self.smaller_leaf_splits_.to_string(),
+                self.larger_leaf_splits_.to_string()))
+                # '|'.join([str(x) for x in self.smaller_leaf_splits_.data_indices_]) if self.smaller_leaf_splits_.data_indices_ is not None else 'None',
+                #'|'.join([str(x) for x in self.larger_leaf_splits_.data_indices_]) if self.larger_leaf_splits_.data_indices_ is not None else 'None',
+            # ))
             # some initial works before finding best split, BeforeFindBestSplit
             if self.before_find_best_split(left_leaf, right_leaf):
                 # find best threshold for every feature, FindBestThresholds
                 self.find_best_thresholds()
+                print ('best_threshold found:\nsmaller_leaf_splits_={},\nlarger_leaf_splits_={}'.format(
+                    self.smaller_leaf_splits_.to_string(),
+                    self.larger_leaf_splits_.to_string()
+                ))
                 # find best split from all features, FindBestSplitsForLeaves
                 self.find_best_splits_for_leaves()
 
@@ -164,19 +179,19 @@ class SerialTreeLearner(TreeLearner):
                 best_split_info.left_sum_hessian)
             self.larger_leaf_splits_.init_ldgh_sum(
                 right_leaf, self.data_partition_,
-                best_split_info.left_sum_gradient,
-                best_split_info.left_sum_hessian)
+                best_split_info.right_sum_gradient,
+                best_split_info.right_sum_hessian)
         else:
             self.smaller_leaf_splits_.init_ldgh_sum(
                 right_leaf, self.data_partition_,
-                best_split_info.left_sum_gradient,
-                best_split_info.left_sum_hessian)
+                best_split_info.right_sum_gradient,
+                best_split_info.right_sum_hessian)
             self.larger_leaf_splits_.init_ldgh_sum(
                 left_leaf, self.data_partition_,
                 best_split_info.left_sum_gradient,
                 best_split_info.left_sum_hessian)
 
-        print (left_leaf, right_leaf)
+        # print (left_leaf, right_leaf)
         return left_leaf, right_leaf
 
 
@@ -202,7 +217,7 @@ class SerialTreeLearner(TreeLearner):
         # reset the splits for leaves
         for i in range(self.num_leaves_):
             self.best_split_per_leaf_[i].reset()
-            print (self.best_split_per_leaf_[i].gain)
+            # print (self.best_split_per_leaf_[i].gain)
 
         # Sumup for root
         if self.data_partition_.leaf_count_[0] == self.num_data_:
@@ -233,12 +248,16 @@ class SerialTreeLearner(TreeLearner):
         """
         num_data_in_left_child = self.data_partition_.leaf_count_[left_leaf] if left_leaf is not None else 0
         num_data_in_right_child = self.data_partition_.leaf_count_[right_leaf] if right_leaf is not None else 0
+        print ('num_data_in_left_child={}, num_data_in_right_child={}'.format(
+            num_data_in_left_child, num_data_in_right_child
+        ))
         # no enough data to continue
         if num_data_in_right_child < self.min_num_data_one_leaf_ * 2 \
                 and num_data_in_left_child < self.min_num_data_one_leaf_ * 2:
             self.best_split_per_leaf_[left_leaf].gain = float('-inf')
             if right_leaf is not None:
                 self.best_split_per_leaf_[right_leaf].gain = float('-inf')
+            print ('Not enough data')
             return False
 
         # None if only has one leaf. else equal the index of smaller leaf
@@ -260,6 +279,7 @@ class SerialTreeLearner(TreeLearner):
                 self.historical_histogram_array_[right_leaf], self.historical_histogram_array_[left_leaf]
             self.hha_index[left_leaf], self.hha_index[right_leaf] = \
                 self.hha_index[right_leaf], self.hha_index[left_leaf]
+            print ('swaped, {}'.format(self.hha_index))
         else:
             smaller_leaf = right_leaf
             # put parent(left) leaf's histograms to larger leaf's histgrams
@@ -281,18 +301,29 @@ class SerialTreeLearner(TreeLearner):
         For every Feature
         """
         for feature_index in range(self.num_features_):
+            print ('    b4construct_smaller:{}'.format(
+                self.smaller_leaf_histogram_array_[feature_index].to_string()))
+            print ('    b4construct_larger:{}'.format(
+                self.larger_leaf_histogram_array_[feature_index].to_string()) \
+                   if self.larger_leaf_histogram_array_ else 'None')
             # feature is not used
             if self.is_feature_used_[feature_index] is False:
                 continue
             # if parent(larger) leaf cannot split at current feature
             if self.larger_leaf_histogram_array_ is not None and \
                     self.larger_leaf_histogram_array_[feature_index].is_splittable() is False:
-                self.smaller_leaf_histogram_array_[feature_index].set_splittable(False)
+                self.smaller_leaf_histogram_array_[feature_index].set_is_splittable(False)
                 continue
 
             # construct histograms for smaller leaf
             # if (ordered_bins_[feature_index] == nullptr)
             if True:
+                # print ('debug', self.smaller_leaf_splits_.data_indices_,
+                #        self.smaller_leaf_splits_.num_data_in_leaf_,
+                #        self.smaller_leaf_splits_.sum_gradients_,
+                #        self.smaller_leaf_splits_.sum_hessians_,
+                #        self.ptr_to_ordered_gradients_,
+                #        self.ptr_to_ordered_hessians_)
                 self.smaller_leaf_histogram_array_[feature_index].construct(
                     self.smaller_leaf_splits_.data_indices_,
                     self.smaller_leaf_splits_.num_data_in_leaf_,
@@ -301,6 +332,8 @@ class SerialTreeLearner(TreeLearner):
                     self.ptr_to_ordered_gradients_,
                     self.ptr_to_ordered_hessians_
                 )
+                print ('    construct_smaller:{}'.format(
+                    self.smaller_leaf_histogram_array_[feature_index].to_string()))
             # find best threshold for smaller child
             self.smaller_leaf_splits_.best_split_per_feature_[feature_index] = \
                 self.smaller_leaf_histogram_array_[feature_index].find_best_threshold()
@@ -313,6 +346,8 @@ class SerialTreeLearner(TreeLearner):
             # so we can just subtract the smaller leaf's histograms
             self.larger_leaf_histogram_array_[feature_index].subtract(
                 self.smaller_leaf_histogram_array_[feature_index])
+            print ('    construct_larger:{}'.format(
+                self.larger_leaf_histogram_array_[feature_index].to_string()))
 
             self.larger_leaf_splits_.best_split_per_feature_[feature_index] = \
                 self.larger_leaf_histogram_array_[feature_index].find_best_threshold()
@@ -326,14 +361,15 @@ class SerialTreeLearner(TreeLearner):
             return
         gains = []
         for i in range(len(leaf_splits.best_split_per_feature_)):
-            print (i, leaf_splits.best_split_per_feature_[i].feature_idx, 
-                   leaf_splits.best_split_per_feature_[i].gain)
+            print ('i={}, feature_idx={}, gain={}'.format(
+                i, leaf_splits.best_split_per_feature_[i].feature_idx,
+                leaf_splits.best_split_per_feature_[i].gain))
             gains.append(leaf_splits.best_split_per_feature_[i].gain)
         best_feature_idx = np.argmax(gains)
         leaf = leaf_splits.leaf_index_
-        self.best_split_per_leaf_[leaf] = leaf_splits.best_split_per_feature_[best_feature_idx]
+        self.best_split_per_leaf_[leaf] = copy.deepcopy(leaf_splits.best_split_per_feature_[best_feature_idx])
 
-        assert self.best_split_per_leaf_[leaf].feature_idx == best_feature_idx
+        # assert self.best_split_per_leaf_[leaf].feature_idx == best_feature_idx
         self.best_split_per_leaf_[leaf].feature_idx = best_feature_idx
-        print (leaf, best_feature_idx, gains[best_feature_idx])
+        # print (leaf, best_feature_idx, gains[best_feature_idx])
 

@@ -79,7 +79,7 @@ class DataSet(object):
         self.num_data_ = self.text_readed.shape[0]
         # SampleDataFromMemory
         self.sample_data = self.text_readed.sample(n=min(50000, self.text_readed.shape[0]))
-        print (self.sample_data)
+        # print (self.sample_data)
         # ConstructBinMappers
         self.construct_bin_mappers()
         # metadata_.InitLabel
@@ -97,7 +97,7 @@ class DataSet(object):
         self.features_ = []
         # None means doesn't use this feature
         self.used_feature_map_ = [None] * sample_values.shape[0]
-        print (labels, sample_values)
+        # print (labels, sample_values)
         for i in range(sample_values.shape[0]):
             bin_mapper = BinMapper()
             bin_mapper.find_bin(sample_values[i], self.max_bin)
@@ -122,6 +122,6 @@ class DataSet(object):
                     # if is used feature
                     self.features_[feature_idx].push_data(i, value)
 
-        for i in range(len(self.features_)):
-            print (self.features_[i].bin_data_.data_)
+        # for i in range(len(self.features_)):
+        #     print (self.features_[i].bin_data_.data_)
 

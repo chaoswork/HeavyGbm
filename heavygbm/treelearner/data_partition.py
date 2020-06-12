@@ -51,10 +51,10 @@ class DataPartition(object):
 
         left_split, right_split = feature_bins.split(
             threshold, self.indices_[begin: begin + cnt])
-        print ('debug', left_split, right_split, self.indices_)
+        # print ('debug', left_split, right_split, self.indices_)
         self.indices_[begin: begin + len(left_split)] = left_split
         self.indices_[begin + len(left_split): begin + cnt] = right_split
-        print ('debug', left_split, right_split, self.indices_)
+        # print ('debug', left_split, right_split, self.indices_)
 
         # update leaf boundary
         self.leaf_count_[leaf] = len(left_split)

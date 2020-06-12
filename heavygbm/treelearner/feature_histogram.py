@@ -14,8 +14,9 @@ class FeatureHistogram(object):
         pass
 
     def init(self, feature, feature_idx,
-             min_num_data_one_leaf, min_sum_hessian_one_leaf):
+             min_num_data_one_leaf, min_sum_hessian_one_leaf, init_index):
         self.feature_idx_ = feature_idx
+        self.init_index = init_index
         self.min_num_data_one_leaf_ = min_num_data_one_leaf
         self.min_sum_hessian_one_leaf_ = min_sum_hessian_one_leaf
         self.bin_data_ = feature.bin_data()
@@ -26,6 +27,14 @@ class FeatureHistogram(object):
 
         self.sum_gradients_ = None
         self.sum_hessians_ = None
+
+    def to_string(self):
+        return '(feature_idx={}, init_index={}, min_num_data_one_leaf_={}, min_sum_hessian_one_leaf={}, sum_gradients={}, sum_hessians={}, is_splittable={}, data_={})'.format(
+            self.feature_idx_, self.init_index, self.min_sum_hessian_one_leaf_,
+            self.min_sum_hessian_one_leaf_, self.sum_gradients_, self.sum_hessians_,
+            self.is_splittable_,
+            [x.to_string() if x else 'None' for x in self.data_]
+        )
 
 
     def set_is_splittable(self, value):
@@ -45,8 +54,8 @@ class FeatureHistogram(object):
             ordered_gradients, ordered_hessians)
 
     def find_best_threshold(self):
-        best_sum_left_gradient = None
-        best_sum_left_hessian = None
+        best_sum_left_gradient = float('nan')
+        best_sum_left_hessian = float('nan')
         best_gain = -float('inf')
         best_left_count = 0
         best_threshold = self.num_bin_
@@ -73,6 +82,11 @@ class FeatureHistogram(object):
             # current split gain
             current_gain = self.get_leaf_split_gain(sum_left_gradient, sum_left_hessian) + \
                 self.get_leaf_split_gain(sum_right_gradient, sum_right_hessian)
+            print ('debug', t, sum_left_gradient, sum_left_hessian,
+                   self.get_leaf_split_gain(sum_left_gradient, sum_left_hessian),
+                   sum_right_gradient, sum_right_hessian, 
+                   self.get_leaf_split_gain(sum_right_gradient, sum_right_hessian),
+                   current_gain, gain_shift)
             # gain is worst than no perform split
             if current_gain < gain_shift:
                 continue
@@ -111,4 +125,14 @@ class FeatureHistogram(object):
 
     def get_leaf_split_gain(self, sum_gradients, sum_hessians):
         return (sum_gradients * sum_gradients) / (sum_hessians)
+
+    def subtract(self, other):
+        self.num_data_ -= other.num_data_
+        self.sum_gradients_ -= other.sum_gradients_
+        self.sum_hessians_ -= other.sum_hessians_
+        for i in range(self.num_bin_):
+            self.data_[i].cnt -= other.data_[i].cnt
+            self.data_[i].sum_gradients -= other.data_[i].sum_gradients
+            self.data_[i].sum_hessians -= other.data_[i].sum_hessians
+
 

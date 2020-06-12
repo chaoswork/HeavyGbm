@@ -20,7 +20,14 @@ class SplitInfo(object):
         self.right_sum_hessian = None
 
     def reset(self):
-        """TODO: to be defined1. """
+        """
+        threshold并没有改变。
+        """
         self.feature_idx = None  # -1
         self.gain = -float('inf')
+
+    def to_string(self):
+        return '(feature_idx={}, gain={}, threshold={})'.format(
+            self.feature_idx, self.gain, self.threshold
+        )
 

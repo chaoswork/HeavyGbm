@@ -71,10 +71,21 @@ class Tree(object):
         self.leaf_value_[self.num_leaves_] = right_value;
 
         self.num_leaves_ += 1
+        print (self.to_string())
         return self.num_leaves_ - 1
 
-
-
-
-
+    def to_string(self):
+        def list_to_str(alist, sep=' '):
+            return sep.join([str(x) for x in alist])
+        tree_str_list = ['']
+        tree_str_list.append('num_leaves=%d' % self.num_leaves_)
+        tree_str_list.append('split_feature=%s' % list_to_str(self.split_feature_real_[:self.num_leaves_]))
+        tree_str_list.append('split_gain=%s' % list_to_str(self.split_gain_[:self.num_leaves_]))
+        tree_str_list.append('threshold=%s' % list_to_str(self.threshold_[:self.num_leaves_]))
+        tree_str_list.append('left_child=%s' % list_to_str(self.left_child_[:self.num_leaves_]))
+        tree_str_list.append('right_child=%s' % list_to_str(self.right_child_[:self.num_leaves_]))
+        tree_str_list.append('leaf_parent=%s' % list_to_str(self.leaf_parent_[:self.num_leaves_]))
+        tree_str_list.append('leaf_value=%s' % list_to_str(self.leaf_value_[:self.num_leaves_]))
+        tree_str_list.append('')
+        return '\n'.join(tree_str_list)
 
