@@ -10,7 +10,7 @@ iter_split=0, left_leaf = 0, right_leaf = -1
         feature1_bin_count=[(-1,1,1), (0,4,4), (0,4,4), (1,1,1), (0,2,2), (0,4,4), (0,4,4)]
     hist:
     |0|1|2|3|4|5|
-    |s|
+    |S|
     |0|1|2|3|4|5|
     best_split: smaller, feature_idx=1, gain = 1*1/1 + 1*1/19 - 0, best_threshold = 0
     tree_split:
@@ -23,7 +23,7 @@ iter_split=0, left_leaf = 0, right_leaf = -1
 iter_split=1, left_leaf=0, right_leaf=1,
     smaller_leaf_split(leaf_index=0) stores [18], sum_g = -1, sum_h = 1, 
     larger_leaf_split(leaf_index=1) store [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,19], sum_g=1, sum_h=19
-    smaller_leaf_histogram_array_ = hha[1],
+    smaller_leaf_histogram_array_ = hha[1], 坐标为1，和smaller_leaf_splits_的不一致，要交换
         feature0_bin_count=[(0,0,0), (0,0,0), (0,0,0), (-1,1,1)]
         feature1_bin_count=[(-1,1,1), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)]
     larger_leaf_histogram_array_ = hha[0],
@@ -69,9 +69,19 @@ iter_split=2, left_leaf=1, right_leaf=2,
 
 
 iter_split=3, left_leaf=2, right_leaf=3
-    smaller_leaf_split(leaf_index=2) store []
-    larger_leaf_split(leaf_index=3) store []
+    smaller_leaf_split(leaf_index=2) store [9,7], sum_g=-2, sum_h=2
+    larger_leaf_split(leaf_index=3) store [2,10,19], sum_g=3, sum_h=3
+    smaller_leaf_histogram_array_ = hha[3]
+        feture0_bin_count=[]
+        feture1_bin_count=[(0,0,0), (-1,1,1), (-1,1,1), (0,0,0), (0,0,0), (0,0,0), (0,0,0)]
+    larger_leaf_histogram_array_ = hha[2]
+        feture0_bin_count=[]
+        feture1_bin_count=[(0,0,0), (0,0,0), (0,0,0), (0,0,0), (1,1,1), (1,1,1), (1,1,1)]
+    hist:
+    |1|0|2|3|4|5|
+    | | |L|S|
 
 
+TODO: best split 怎么划分的？
 
 

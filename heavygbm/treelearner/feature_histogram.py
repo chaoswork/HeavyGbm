@@ -100,6 +100,8 @@ class FeatureHistogram(object):
                 #  left is <= threshold, right is > threshold.  so this is t-1
                 best_threshold = t - 1
                 best_gain = current_gain
+        if self.is_splittable_ == False:
+            print ('[debug] set is_splittable False')
         # update split information
         output = SplitInfo()
         output.feature_idx = self.feature_idx_

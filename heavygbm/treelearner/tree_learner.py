@@ -132,6 +132,7 @@ class SerialTreeLearner(TreeLearner):
                 iter_split, left_leaf, right_leaf if right_leaf is not None else -1,
                 self.smaller_leaf_splits_.to_string(),
                 self.larger_leaf_splits_.to_string()))
+            self.display_hha(0, ['smaller', 'larger'])
                 # '|'.join([str(x) for x in self.smaller_leaf_splits_.data_indices_]) if self.smaller_leaf_splits_.data_indices_ is not None else 'None',
                 #'|'.join([str(x) for x in self.larger_leaf_splits_.data_indices_]) if self.larger_leaf_splits_.data_indices_ is not None else 'None',
             # ))
@@ -146,7 +147,7 @@ class SerialTreeLearner(TreeLearner):
                 # find best split from all features, FindBestSplitsForLeaves
                 self.find_best_splits_for_leaves()
 
-            # 原始版本如果gain相同，则返回相同的index
+            # 原始版本如果gain相同，则返回较小的index
             best_leaf = np.argmax([x.gain for x in self.best_split_per_leaf_])
             best_leaf_splitinfo = self.best_split_per_leaf_[best_leaf]
             if best_leaf_splitinfo.gain <= 0:
@@ -274,6 +275,7 @@ class SerialTreeLearner(TreeLearner):
             # We will construc histograms for smaller leaf, and smaller_leaf=left_leaf = parent.
             # if we don't swap the cache, we will overwrite the parent's hisogram cache.
             # std::swap(historical_histogram_array_[left_leaf], historical_histogram_array_[right_leaf]);
+
             # TODO: Why Swap???
             self.historical_histogram_array_[left_leaf], self.historical_histogram_array_[right_leaf] = \
                 self.historical_histogram_array_[right_leaf], self.historical_histogram_array_[left_leaf]
@@ -309,10 +311,13 @@ class SerialTreeLearner(TreeLearner):
             # feature is not used
             if self.is_feature_used_[feature_index] is False:
                 continue
+            print ('debug, feature_idx=', feature_index)
             # if parent(larger) leaf cannot split at current feature
             if self.larger_leaf_histogram_array_ is not None and \
                     self.larger_leaf_histogram_array_[feature_index].is_splittable() is False:
                 self.smaller_leaf_histogram_array_[feature_index].set_is_splittable(False)
+                print ('debug, feature_idx=', feature_index,
+                       self.larger_leaf_histogram_array_[feature_index].is_splittable())
                 continue
 
             # construct histograms for smaller leaf
@@ -337,6 +342,9 @@ class SerialTreeLearner(TreeLearner):
             # find best threshold for smaller child
             self.smaller_leaf_splits_.best_split_per_feature_[feature_index] = \
                 self.smaller_leaf_histogram_array_[feature_index].find_best_threshold()
+            # print hh matrix
+            self.display_hha(feature_index, ['smaller'])
+
             # only has root leaf
             if self.larger_leaf_splits_ is None or self.larger_leaf_splits_.leaf_index_ is None:
                 print('Only has root leaf, continue')
@@ -348,9 +356,49 @@ class SerialTreeLearner(TreeLearner):
                 self.smaller_leaf_histogram_array_[feature_index])
             print ('    construct_larger:{}'.format(
                 self.larger_leaf_histogram_array_[feature_index].to_string()))
+            self.display_hha(feature_index, ['smaller', 'larger'])
 
             self.larger_leaf_splits_.best_split_per_feature_[feature_index] = \
                 self.larger_leaf_histogram_array_[feature_index].find_best_threshold()
+
+    def display_hha(self, feature_index, hha_type_list):
+        for j in range(self.train_data_.num_features()):
+            result = ' '
+            if j == feature_index:
+                result = '*'
+            for i in range(self.num_leaves_):
+                sum_g = self.historical_histogram_array_[i][j].sum_gradients_ 
+                sum_h = self.historical_histogram_array_[i][j].sum_hessians_ 
+
+                fh = '{},{},{}'.format(
+                    1 if self.historical_histogram_array_[i][j].is_splittable() else 0,
+                    '{:.2f}'.format(sum_g) if sum_g is not None else '-',
+                    '{:.2f}'.format(sum_h) if sum_h is not None else '-'
+                )
+                result += '{:<16}'.format(fh)
+            print (result)
+        print (' ' + ''.join(['{:<16d}'.format(x) for x in self.hha_index]))
+        hha_list = []
+        if 'smaller' in hha_type_list:
+            if self.smaller_leaf_histogram_array_ is not None:
+                hha = self.smaller_leaf_histogram_array_[feature_index]
+                tag = 'S'
+                hha_list.append((hha, tag))
+        if 'larger' in hha_type_list:
+            if self.larger_leaf_histogram_array_ is not None:
+                hha = self.larger_leaf_histogram_array_[feature_index]
+                tag = 'L'
+                hha_list.append((hha, tag))
+        result = ' '
+        for item in self.hha_index:
+            hit = False
+            for (hha, tag) in hha_list:
+                if item == hha.init_index:
+                    result += '{:<16s}'.format(tag)
+                    hit = True
+            if not hit:
+                result += '{:<16s}'.format('-')
+        print (result)
 
     def find_best_splits_for_leaves(self):
         self.find_best_split_for_leaf(self.smaller_leaf_splits_)
