@@ -28,6 +28,15 @@ class Tree(object):
         self.num_leaves_ = 1
         self.leaf_parent_[0] = None
 
+    def shrinkage(self, rate):
+        for i in range(self.num_leaves_):
+            before = self.leaf_value_[i]
+            if before is not None:
+                self.leaf_value_[i] *= rate
+            print ('leaf_value_[{}] shrinkage from {} to {}'.format(
+                i, before, self.leaf_value_[i]))
+
+
     def split(self, leaf, feature_idx, threshold_bin, real_feature,
               threshold, left_value, right_value, gain):
         #   0
@@ -76,16 +85,19 @@ class Tree(object):
 
     def to_string(self):
         def list_to_str(alist, sep=' '):
-            return sep.join([str(x) for x in alist])
-        tree_str_list = ['']
+            return sep.join(['{:g}'.format(x) for x in alist])
+        tree_str_list = []
         tree_str_list.append('num_leaves=%d' % self.num_leaves_)
-        tree_str_list.append('split_feature=%s' % list_to_str(self.split_feature_real_[:self.num_leaves_]))
-        tree_str_list.append('split_gain=%s' % list_to_str(self.split_gain_[:self.num_leaves_]))
-        tree_str_list.append('threshold=%s' % list_to_str(self.threshold_[:self.num_leaves_]))
-        tree_str_list.append('left_child=%s' % list_to_str(self.left_child_[:self.num_leaves_]))
-        tree_str_list.append('right_child=%s' % list_to_str(self.right_child_[:self.num_leaves_]))
+        tree_str_list.append('split_feature=%s' % list_to_str(self.split_feature_real_[:self.num_leaves_ - 1]))
+        tree_str_list.append('split_gain=%s' % list_to_str(self.split_gain_[:self.num_leaves_ - 1]))
+        tree_str_list.append('threshold=%s' % list_to_str(self.threshold_[:self.num_leaves_ - 1]))
+        tree_str_list.append('left_child=%s' % list_to_str(self.left_child_[:self.num_leaves_ - 1]))
+        tree_str_list.append('right_child=%s' % list_to_str(self.right_child_[:self.num_leaves_ - 1]))
         tree_str_list.append('leaf_parent=%s' % list_to_str(self.leaf_parent_[:self.num_leaves_]))
         tree_str_list.append('leaf_value=%s' % list_to_str(self.leaf_value_[:self.num_leaves_]))
         tree_str_list.append('')
+        tree_str_list.append('')
         return '\n'.join(tree_str_list)
 
+    def leaf_output(self, leaf):
+        return self.leaf_value_[leaf]

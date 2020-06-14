@@ -52,6 +52,8 @@ class SerialTreeLearner(TreeLearner):
         self.min_sum_hessian_one_leaf_ = float(config['min_sum_hessian_in_leaf'])
         self.feature_fraction_ = float(config['feature_fraction'])
 
+        self.last_trained_tree_ = None
+
     def init(self, train_data):
         self.train_data_ = train_data
         self.num_data_ = self.train_data_.num_data()
@@ -148,11 +150,15 @@ class SerialTreeLearner(TreeLearner):
                 self.find_best_splits_for_leaves()
 
             # 原始版本如果gain相同，则返回较小的index
+            for i, item in enumerate(self.best_split_per_leaf_):
+                print ('best_split_per_leaf[{}]={}'.format(i, item.to_string()))
             best_leaf = np.argmax([x.gain for x in self.best_split_per_leaf_])
             best_leaf_splitinfo = self.best_split_per_leaf_[best_leaf]
             if best_leaf_splitinfo.gain <= 0:
                 break
             left_leaf, right_leaf = self.split(tree, best_leaf)
+        self.last_trained_tree_ = tree
+        return tree
 
 
     def split(self, tree, best_leaf):
@@ -401,7 +407,9 @@ class SerialTreeLearner(TreeLearner):
         print (result)
 
     def find_best_splits_for_leaves(self):
+        print ('find best split in samller_leaf_splits_')
         self.find_best_split_for_leaf(self.smaller_leaf_splits_)
+        print ('find best split in larger_leaf_splits_')
         self.find_best_split_for_leaf(self.larger_leaf_splits_)
 
     def find_best_split_for_leaf(self, leaf_splits):
@@ -409,9 +417,9 @@ class SerialTreeLearner(TreeLearner):
             return
         gains = []
         for i in range(len(leaf_splits.best_split_per_feature_)):
-            print ('i={}, feature_idx={}, gain={}'.format(
-                i, leaf_splits.best_split_per_feature_[i].feature_idx,
-                leaf_splits.best_split_per_feature_[i].gain))
+            print ('\tbest_split_per_feature[{}]={}'.format(
+                i, leaf_splits.best_split_per_feature_[i].to_string()
+            ))
             gains.append(leaf_splits.best_split_per_feature_[i].gain)
         best_feature_idx = np.argmax(gains)
         leaf = leaf_splits.leaf_index_
@@ -420,4 +428,12 @@ class SerialTreeLearner(TreeLearner):
         # assert self.best_split_per_leaf_[leaf].feature_idx == best_feature_idx
         self.best_split_per_leaf_[leaf].feature_idx = best_feature_idx
         # print (leaf, best_feature_idx, gains[best_feature_idx])
+
+
+    def add_prediction_to_score(self, score):
+        for i in range(self.num_leaves_):
+            output = self.last_trained_tree_.leaf_output(i)
+            cnt_leaf_data, indices = self.data_partition_.get_index_on_leaf(i)
+            for j in range(cnt_leaf_data):
+                score[indices[j]] += output
 

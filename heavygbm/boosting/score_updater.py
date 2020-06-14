@@ -18,3 +18,6 @@ class ScoreUpdater(object):
     def score(self):
         return self.score_
 
+    def add_score(self, tree_learner):
+        tree_learner.add_prediction_to_score(self.score_)
+

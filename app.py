@@ -51,16 +51,17 @@ class App(object):
         # load train
         self.train_data_ = DataSet(self.config_['data'],
                                    max_bin=self.config_['max_bin'])
+        self.train_data_.load_train_data()
         # create training metric
         if self.config_['is_training_metric'] == 'true':
             for metric_type in self.config_['metric'].split(','):
                 metric_type = metric_type.strip()
                 metric = Metric.create_metric(metric_type, self.config_)
-            self.train_metric_.append(metric)
-        print (self.train_metric_)
+                metric.init("training", self.train_data_.meta_data_, self.train_data_.num_data_)
+                self.train_metric_.append(metric)
+                print (self.train_metric_)
 
 
-        self.train_data_.load_train_data()
         # load valid
 
     def init_train(self):
